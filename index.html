@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direcciones Residenciales</title>
+<style>
+  :root {
+    --bg: #f3f2ee;
+    --card: #ffffff;
+    --ink: #1b1c1a;
+    --muted: #6a6a64;
+    --line: #e2e0d9;
+    --chip: #ecebe5;
+    --accent: #1d6b52;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefe6;
+    --err: #b3261e;
+    --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #131412;
+      --card: #1c1e1b;
+      --ink: #ebeae5;
+      --muted: #9b9a92;
+      --line: #2c2e2a;
+      --chip: #252723;
+      --accent: #45b48a;
+      --accent-ink: #0c1a14;
+      --accent-soft: #1d3329;
+      --err: #f2b8b5;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+  header h1 { font-size: 26px; line-height: 1.2; margin: 0 0 4px; letter-spacing: -.01em; }
+  header p { margin: 0 0 24px; color: var(--muted); }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .seg { display: inline-flex; background: var(--chip); border-radius: 10px; padding: 3px; }
+  .seg button {
+    border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 600;
+    padding: 7px 14px; border-radius: 8px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  select {
+    font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 10px; min-width: 190px;
+  }
+
+  #go {
+    width: 100%; border: 0; border-radius: 14px; padding: 18px; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); font: inherit; font-size: 18px; font-weight: 700;
+    box-shadow: var(--shadow); transition: transform .08s ease, opacity .15s ease;
+  }
+  #go:active { transform: scale(.99); }
+  #go:disabled { opacity: .6; cursor: progress; }
+  #status { min-height: 22px; margin: 10px 2px 18px; color: var(--muted); font-size: 14px; }
+  #status.err { color: var(--err); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+  .card[hidden] { display: none; }
+  .addr { padding: 22px 22px 16px; display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
+  .addr .lines { font-size: 21px; line-height: 1.35; font-weight: 650; overflow-wrap: anywhere; }
+  .addr .lines span { display: block; }
+  .addr .lines .l3 { font-size: 15px; font-weight: 500; color: var(--muted); }
+  .badge {
+    display: inline-block; margin-bottom: 10px; font-size: 12px; font-weight: 700; letter-spacing: .03em;
+    text-transform: uppercase; background: var(--accent-soft); color: var(--accent); padding: 3px 9px; border-radius: 999px;
+  }
+  .btn {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-weight: 600;
+    border-radius: 10px; padding: 8px 12px; cursor: pointer; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-top: 1px solid var(--line); }
+  .field { padding: 12px 22px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .field:hover { background: var(--chip); }
+  .field small { display: block; color: var(--muted); font-size: 12px; }
+  .field b { font-weight: 600; overflow-wrap: anywhere; }
+
+  .map { position: relative; aspect-ratio: 16 / 9; background: var(--chip); }
+  .map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 22px 18px; }
+
+  h2 { font-size: 15px; margin: 30px 0 10px; color: var(--muted); font-weight: 600; }
+  #history { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  #history li button {
+    width: 100%; text-align: left; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    font: inherit; padding: 10px 14px; border-radius: 10px; cursor: pointer; overflow-wrap: anywhere;
+  }
+  #history li button:hover { border-color: var(--muted); }
+  #history .cc {
+    display: inline-block; font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-soft);
+    border-radius: 6px; padding: 1px 6px; margin-right: 8px; vertical-align: 1px;
+  }
+  .empty { color: var(--muted); font-size: 14px; }
+  footer { margin-top: 28px; color: var(--muted); font-size: 12px; }
+  footer a { color: inherit; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0;
+    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600;
+    transition: all .2s ease; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 520px) {
+    .addr { flex-direction: column; }
+    .addr .lines { font-size: 19px; }
+    select { flex: 1; min-width: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Generador de direcciones residenciales</h1>
+    <p>Direcciones reales de casas en Estados Unidos y Canadá (datos de OpenStreetMap, verificables en Google Maps).</p>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="País">
+      <button type="button" data-cc="ALL" aria-pressed="true">Ambos</button>
+      <button type="button" data-cc="US" aria-pressed="false">EE.UU.</button>
+      <button type="button" data-cc="CA" aria-pressed="false">Canadá</button>
+    </div>
+    <select id="city" aria-label="Ciudad"></select>
+  </div>
+
+  <button id="go" type="button">Generar dirección</button>
+  <div id="status" role="status"></div>
+
+  <section class="card" id="result" hidden>
+    <div class="addr">
+      <div>
+        <span class="badge" id="r-type"></span>
+        <div class="lines" id="r-lines"></div>
+      </div>
+      <button class="btn primary" id="copy-all" type="button">Copiar</button>
+    </div>
+    <div class="fields" id="r-fields"></div>
+    <div class="map"><iframe id="r-map" title="Mapa satelital" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    <div class="links">
+      <a class="btn" id="l-gmaps" target="_blank" rel="noopener">Abrir en Google Maps</a>
+      <a class="btn" id="l-street" target="_blank" rel="noopener">Ver Street View</a>
+      <a class="btn" id="l-osm" target="_blank" rel="noopener">Ver en OpenStreetMap</a>
+      <button class="btn" id="t-map" type="button">Vista: satélite</button>
+    </div>
+  </section>
+
+  <h2>Historial</h2>
+  <ul id="history"></ul>
+
+  <footer>
+    Datos © colaboradores de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (ODbL), vía Photon (komoot) y Nominatim.
+  </footer>
+</div>
+<div id="toast"></div>
+
+<script>
+// ---------- Ciudades con buena cobertura de casas con dirección en OpenStreetMap ----------
+// [nombre, estado/provincia, lat, lon, radio de búsqueda en km]
+const CITIES = {
+  US: [
+    ["Los Angeles","CA",34.05,-118.30,10], ["San Francisco","CA",37.755,-122.44,4], ["San Jose","CA",37.32,-121.87,8],
+    ["Sacramento","CA",38.56,-121.47,8], ["Washington","DC",38.91,-77.02,5], ["Seattle","WA",47.62,-122.33,7],
+    ["Portland","OR",45.52,-122.65,7], ["Austin","TX",30.30,-97.74,9], ["Dallas","TX",32.80,-96.80,12],
+    ["Houston","TX",29.76,-95.40,14], ["Chicago","IL",41.86,-87.68,12], ["Boston","MA",42.32,-71.08,5],
+    ["Queens","NY",40.72,-73.82,6], ["Denver","CO",39.73,-104.95,8], ["Salt Lake City","UT",40.74,-111.89,6],
+    ["Phoenix","AZ",33.50,-112.07,14], ["Miami","FL",25.78,-80.24,6], ["Tampa","FL",27.97,-82.46,8],
+    ["Atlanta","GA",33.76,-84.40,8], ["Minneapolis","MN",44.96,-93.27,6], ["Philadelphia","PA",40.00,-75.15,8],
+    ["Columbus","OH",39.98,-82.99,10], ["Charlotte","NC",35.22,-80.84,10], ["Raleigh","NC",35.80,-78.64,9],
+    ["Detroit","MI",42.37,-83.10,10], ["Kansas City","MO",39.07,-94.55,10], ["Nashville","TN",36.15,-86.78,10]
+  ],
+  CA: [
+    ["Toronto","ON",43.71,-79.40,12], ["Mississauga","ON",43.59,-79.64,9], ["Brampton","ON",43.70,-79.76,8],
+    ["Ottawa","ON",45.38,-75.70,10], ["Kitchener","ON",43.44,-80.48,6], ["Montreal","QC",45.53,-73.62,8],
+    ["Vancouver","BC",49.25,-123.11,5], ["Surrey","BC",49.15,-122.80,9], ["Victoria","BC",48.44,-123.36,4],
+    ["Calgary","AB",51.04,-114.07,12], ["Edmonton","AB",53.53,-113.50,12], ["Winnipeg","MB",49.88,-97.15,9],
+    ["Saskatoon","SK",52.13,-106.65,7], ["Regina","SK",50.45,-104.61,6], ["Halifax","NS",44.66,-63.60,5]
+  ]
+};
+
+// Solo edificios de vivienda. Nada de comercios, bodegas ni oficinas.
+const TYPES = {
+  house: "Casa", detached: "Casa independiente", semidetached_house: "Casa dúplex",
+  terrace: "Casa en hilera", bungalow: "Bungalow", residential: "Edificio residencial"
+};
+const COUNTRY_NAME = { US: "United States", CA: "Canada" };
+
+const STATE_CODES = {
+  "alabama":"AL","alaska":"AK","arizona":"AZ","arkansas":"AR","california":"CA","colorado":"CO","connecticut":"CT",
+  "delaware":"DE","district of columbia":"DC","florida":"FL","georgia":"GA","hawaii":"HI","idaho":"ID","illinois":"IL",
+  "indiana":"IN","iowa":"IA","kansas":"KS","kentucky":"KY","louisiana":"LA","maine":"ME","maryland":"MD",
+  "massachusetts":"MA","michigan":"MI","minnesota":"MN","mississippi":"MS","missouri":"MO","montana":"MT",
+  "nebraska":"NE","nevada":"NV","new hampshire":"NH","new jersey":"NJ","new mexico":"NM","new york":"NY",
+  "north carolina":"NC","north dakota":"ND","ohio":"OH","oklahoma":"OK","oregon":"OR","pennsylvania":"PA",
+  "rhode island":"RI","south carolina":"SC","south dakota":"SD","tennessee":"TN","texas":"TX","utah":"UT",
+  "vermont":"VT","virginia":"VA","washington":"WA","west virginia":"WV","wisconsin":"WI","wyoming":"WY",
+  "ontario":"ON","quebec":"QC","québec":"QC","british columbia":"BC","alberta":"AB","manitoba":"MB",
+  "saskatchewan":"SK","nova scotia":"NS","new brunswick":"NB","newfoundland and labrador":"NL",
+  "prince edward island":"PE","yukon":"YT","northwest territories":"NT","nunavut":"NU"
+};
+
+const MAX_TRIES = 10;
+const $ = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+let country = "ALL";
+let mapType = "k";          // k = satélite, m = mapa
+let current = null;
+const seen = new Set();     // para no repetir direcciones en la misma sesión
+
+// ---------- Utilidades ----------
+function randomPoint([, , lat, lon, km]) {
+  const r = km * Math.sqrt(Math.random());
+  const t = Math.random() * 2 * Math.PI;
+  return [lat + (r * Math.cos(t)) / 111, lon + (r * Math.sin(t)) / (111 * Math.cos(lat * Math.PI / 180))];
+}
+
+function stateCode(name, fallback) {
+  if (!name) return fallback;
+  return STATE_CODES[name.trim().toLowerCase()] || fallback;
+}
+
+function cleanPostcode(pc, cc) {
+  if (!pc) return null;
+  pc = String(pc).trim().toUpperCase();
+  if (cc === "US") {
+    const m = pc.match(/^(\d{5})(-\d{4})?$/);
+    return m ? m[1] : null;
+  }
+  const m = pc.replace(/\s+/g, "").match(/^([ABCEGHJ-NPRSTVXY]\d[A-Z])(\d[A-Z]\d)$/);
+  return m ? `${m[1]} ${m[2]}` : null;
+}
+
+function validNumber(n) {
+  return n && /^\d+[A-Za-z]?(-\d+[A-Za-z]?)?$/.test(String(n).trim());
+}
+
+function buildAddress(raw, cc, city) {
+  const postcode = cleanPostcode(raw.postcode, cc);
+  if (!validNumber(raw.number) || !raw.street || !postcode) return null;
+  return {
+    id: raw.id,
+    number: String(raw.number).trim(),
+    street: raw.street.trim(),
+    city: (raw.city || city[0]).trim(),
+    state: stateCode(raw.state, city[1]),
+    postcode,
+    cc,
+    country: COUNTRY_NAME[cc],
+    type: raw.type,
+    lat: raw.lat,
+    lon: raw.lon,
+    osmUrl: raw.osmUrl
+  };
+}
+
+// ---------- Fuente principal: Photon (filtra por tipo de edificio) ----------
+async function fromPhoton(lat, lon, cc, city) {
+  const p = new URLSearchParams({ lat: lat.toFixed(5), lon: lon.toFixed(5), limit: "20", radius: "1", lang: "en" });
+  Object.keys(TYPES).forEach(t => p.append("osm_tag", "building:" + t));
+  const res = await fetch("https://photon.komoot.io/reverse?" + p, { signal: AbortSignal.timeout(12000) });
+  if (!res.ok) throw new Error("Photon HTTP " + res.status);
+  const data = await res.json();
+  const OSM_TYPE = { N: "node", W: "way", R: "relation" };
+  return (data.features || [])
+    .filter(f => {
+      const q = f.properties;
+      return q.osm_key === "building" && TYPES[q.osm_value] && !q.name && q.countrycode === cc;
+    })
+    .map(f => {
+      const q = f.properties;
+      return buildAddress({
+        id: q.osm_type + q.osm_id,
+        number: q.housenumber, street: q.street,
+        city: q.city || q.town || q.village || q.locality,
+        state: q.state, postcode: q.postcode, type: q.osm_value,
+        lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
+        osmUrl: `https://www.openstreetmap.org/${OSM_TYPE[q.osm_type] || "way"}/${q.osm_id}`
+      }, cc, city);
+    })
+    .filter(Boolean);
+}
+
+// ---------- Respaldo: Nominatim (si Photon no responde) ----------
+async function fromNominatim(lat, lon, cc, city) {
+  const p = new URLSearchParams({ format: "jsonv2", lat: lat.toFixed(5), lon: lon.toFixed(5), zoom: "18", addressdetails: "1", "accept-language": "en" });
+  const res = await fetch("https://nominatim.openstreetmap.org/reverse?" + p, { signal: AbortSignal.timeout(12000) });
+  if (!res.ok) throw new Error("Nominatim HTTP " + res.status);
+  const j = await res.json();
+  const a = j.address || {};
+  if (j.category !== "building" || !TYPES[j.type] || j.name || (a.country_code || "").toUpperCase() !== cc) return [];
+  const iso = a["ISO3166-2-lvl4"];
+  const addr = buildAddress({
+    id: j.osm_type + j.osm_id,
+    number: a.house_number, street: a.road,
+    city: a.city || a.town || a.village || a.hamlet,
+    state: iso ? null : a.state, postcode: a.postcode, type: j.type,
+    lat: +j.lat, lon: +j.lon,
+    osmUrl: `https://www.openstreetmap.org/${j.osm_type}/${j.osm_id}`
+  }, cc, city);
+  if (addr && iso) addr.state = iso.split("-")[1];
+  return addr ? [addr] : [];
+}
+
+// En algunas ciudades de EE.UU. (ej. Chicago) Photon devuelve el "Township" en vez de la ciudad.
+// En ese caso se le pregunta a Nominatim solo por el nombre correcto de la ciudad.
+async function fixCity(addr, city) {
+  if (!/\b(township|twp)\b|^town of /i.test(addr.city)) return;
+  try {
+    const p = new URLSearchParams({ format: "jsonv2", lat: addr.lat, lon: addr.lon, zoom: "18", addressdetails: "1", "accept-language": "en" });
+    const res = await fetch("https://nominatim.openstreetmap.org/reverse?" + p, { signal: AbortSignal.timeout(8000) });
+    const a = (await res.json()).address || {};
+    addr.city = a.city || a.town || a.village || city[0];
+  } catch {
+    addr.city = city[0];
+  }
+}
+
+// ---------- Generar ----------
+async function generate() {
+  const btn = $("go");
+  btn.disabled = true;
+  setStatus("Buscando…");
+  const chosen = $("city").value;
+  let lastError = null;
+
+  for (let i = 1; i <= MAX_TRIES; i++) {
+    let cc, city;
+    if (chosen) {
+      [cc, city] = [chosen.split("|")[0], CITIES[chosen.split("|")[0]][+chosen.split("|")[1]]];
+    } else {
+      cc = country === "ALL" ? pick(["US", "CA"]) : country;
+      city = pick(CITIES[cc]);
+    }
+    const [lat, lon] = randomPoint(city);
+    setStatus(`Buscando casas en ${city[0]}, ${city[1]}…${i > 1 ? ` (intento ${i})` : ""}`);
+
+    let list = [];
+    try {
+      list = await fromPhoton(lat, lon, cc, city);
+    } catch (e) {
+      lastError = e;
+      try {
+        await sleep(1100); // Nominatim pide máximo 1 consulta por segundo
+        list = await fromNominatim(lat, lon, cc, city);
+      } catch (e2) { lastError = e2; }
+    }
+
+    list = list.filter(a => !seen.has(a.id));
+    if (list.length) {
+      const addr = pick(list);
+      seen.add(addr.id);
+      await fixCity(addr, city);
+      show(addr);
+      addHistory(addr);
+      setStatus(`Encontrada en ${addr.city}, ${addr.state}.`);
+      btn.disabled = false;
+      return;
+    }
+    await sleep(400);
+  }
+
+  setStatus(lastError
+    ? "No se pudo conectar con el servidor de mapas. Revisa tu internet e inténtalo de nuevo."
+    : "No encontré casas en esta zona. Vuelve a intentarlo.", true);
+  btn.disabled = false;
+}
+
+// ---------- Mostrar resultado ----------
+const oneLine = (a) => `${a.number} ${a.street}, ${a.city}, ${a.state} ${a.postcode}, ${a.country}`;
+
+function show(a) {
+  current = a;
+  $("result").hidden = false;
+  $("r-type").textContent = TYPES[a.type] || "Residencial";
+  $("r-lines").innerHTML = "";
+  [[`${a.number} ${a.street}`, "l1"], [`${a.city}, ${a.state} ${a.postcode}`, "l2"], [a.country, "l3"]]
+    .forEach(([txt, cls]) => {
+      const s = document.createElement("span");
+      s.className = cls; s.textContent = txt;
+      $("r-lines").appendChild(s);
+    });
+
+  const fields = [
+    ["Número", a.number], ["Calle", a.street], ["Ciudad", a.city],
+    [a.cc === "US" ? "Estado" : "Provincia", a.state],
+    [a.cc === "US" ? "ZIP code" : "Código postal", a.postcode],
+    ["País", a.country], ["Coordenadas", `${a.lat.toFixed(6)}, ${a.lon.toFixed(6)}`]
+  ];
+  $("r-fields").innerHTML = "";
+  fields.forEach(([label, value]) => {
+    const d = document.createElement("div");
+    d.className = "field"; d.title = "Clic para copiar";
+    d.innerHTML = "<small></small><b></b>";
+    d.querySelector("small").textContent = label;
+    d.querySelector("b").textContent = value;
+    d.onclick = () => copy(value, label + " copiado");
+    $("r-fields").appendChild(d);
+  });
+
+  renderMap();
+  $("l-gmaps").href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(oneLine(a));
+  $("l-street").href = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${a.lat},${a.lon}`;
+  $("l-osm").href = a.osmUrl;
+}
+
+function renderMap() {
+  if (!current) return;
+  $("r-map").src = `https://maps.google.com/maps?q=${current.lat},${current.lon}&t=${mapType}&z=19&output=embed`;
+  $("t-map").textContent = mapType === "k" ? "Vista: satélite" : "Vista: mapa";
+}
+
+// ---------- Historial (se guarda en este navegador) ----------
+let memHistory = null;      // copia en memoria por si el navegador bloquea el guardado
+function loadHistory() {
+  if (memHistory) return memHistory;
+  try { memHistory = JSON.parse(localStorage.getItem("dir-historial") || "[]"); } catch { memHistory = []; }
+  return memHistory;
+}
+function saveHistory(list) {
+  memHistory = list;
+  try { localStorage.setItem("dir-historial", JSON.stringify(list)); } catch {}
+}
+function addHistory(a) {
+  const list = [a, ...loadHistory().filter(x => x.id !== a.id)].slice(0, 15);
+  saveHistory(list);
+  renderHistory();
+}
+function renderHistory() {
+  const ul = $("history");
+  const list = loadHistory();
+  ul.innerHTML = "";
+  if (!list.length) {
+    ul.innerHTML = '<li class="empty">Aún no has generado direcciones.</li>';
+    return;
+  }
+  list.forEach(a => {
+    seen.add(a.id);
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    const tag = document.createElement("span");
+    tag.className = "cc";
+    tag.textContent = a.cc;
+    b.append(tag, oneLine(a));
+    b.onclick = () => { show(a); window.scrollTo({ top: 0, behavior: "smooth" }); };
+    li.appendChild(b);
+    ul.appendChild(li);
+  });
+}
+
+// ---------- UI ----------
+function setStatus(msg, isErr = false) {
+  $("status").textContent = msg;
+  $("status").classList.toggle("err", isErr);
+}
+
+let toastTimer;
+async function copy(text, msg = "Copiado") {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const t = document.createElement("textarea");
+    t.value = text; document.body.appendChild(t); t.select();
+    document.execCommand("copy"); t.remove();
+  }
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 1400);
+}
+
+function fillCities() {
+  const sel = $("city");
+  sel.innerHTML = '<option value="">Cualquier ciudad</option>';
+  const ccs = country === "ALL" ? ["US", "CA"] : [country];
+  ccs.forEach(cc => {
+    const g = document.createElement("optgroup");
+    g.label = cc === "US" ? "Estados Unidos" : "Canadá";
+    CITIES[cc]
+      .map((c, i) => [c, i])
+      .sort((x, y) => x[0][0].localeCompare(y[0][0]))
+      .forEach(([c, i]) => {
+        const o = document.createElement("option");
+        o.value = `${cc}|${i}`;
+        o.textContent = `${c[0]}, ${c[1]}`;
+        g.appendChild(o);
+      });
+    sel.appendChild(g);
+  });
+}
+
+document.querySelectorAll(".seg button").forEach(b => {
+  b.onclick = () => {
+    country = b.dataset.cc;
+    document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    fillCities();
+  };
+});
+$("go").onclick = generate;
+$("copy-all").onclick = () => current && copy(oneLine(current), "Dirección copiada");
+$("t-map").onclick = () => { mapType = mapType === "k" ? "m" : "k"; renderMap(); };
+
+fillCities();
+renderHistory();
+</script>
+</body>
+</html>
