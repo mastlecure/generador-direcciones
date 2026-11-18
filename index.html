@@ -99,11 +99,25 @@
   .btn.primary:active { background: var(--accent); opacity: .85; }
   .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
-  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-top: 1px solid var(--line); }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); border-top: 1px solid var(--line); }
   .field {
     padding: 12px 22px; border: 0; border-bottom: 1px solid var(--line); cursor: pointer;
     background: transparent; color: inherit; font: inherit; text-align: left;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    transition: background .15s ease;
   }
+  .field.wide { grid-column: 1 / -1; }
+  .field .txt { min-width: 0; }
+  /* Icono de copiar: siempre visible para que se entienda que cada dato se copia solo */
+  .field .ico { flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: var(--muted); background: var(--chip); }
+  .field .ico svg { width: 16px; height: 16px; }
+  .field .ico .ok { display: none; }
+  .field.copied { background: var(--accent-soft); }
+  .field.copied .ico { background: var(--accent); color: var(--accent-ink); }
+  .field.copied .ico .cp { display: none; }
+  .field.copied .ico .ok { display: block; }
+  .field.copied small::after { content: " · copiado"; color: var(--accent); font-weight: 700; }
+  .fields-tip { grid-column: 1 / -1; padding: 8px 22px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); }
   @media (hover: hover) { .field:hover { background: var(--chip); } }
   .field:active { background: var(--chip); }
   .field:focus-visible, .btn:focus-visible, #go:focus-visible, .seg button:focus-visible, #history li button:focus-visible {
@@ -191,8 +205,9 @@
     .addr .lines { font-size: 19px; }
     #copy-all { width: 100%; justify-content: center; padding: 12px; }
     .fields { grid-template-columns: 1fr 1fr; }
-    .field { padding: 12px 16px; min-height: 56px; }
-    .fields .field:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .field { padding: 12px 12px 12px 16px; min-height: 60px; }
+    .field.wide-m { grid-column: 1 / -1; }
+    .fields-tip { padding: 8px 16px; }
 
     .phone { padding: 16px; flex-direction: column; align-items: stretch; }
     .phone .num { font-size: 22px; display: inline-block; padding: 4px 0; }
@@ -703,21 +718,38 @@ function show(a) {
       $("r-lines").appendChild(s);
     });
 
+  // [etiqueta, valor, clase extra]  wide = ocupa toda la fila; wide-m = toda la fila solo en móvil
   const fields = [
+    ["Dirección (línea 1)", `${a.number} ${a.street}`, "wide"],
     ["Número", a.number], ["Calle", a.street], ["Ciudad", a.city],
     [a.cc === "US" ? "Estado" : "Provincia", a.state],
     [a.cc === "US" ? "ZIP code" : "Código postal", a.postcode],
-    ["País", a.country], ["Coordenadas", `${a.lat.toFixed(6)}, ${a.lon.toFixed(6)}`]
+    ["País", a.country], ["Coordenadas", `${a.lat.toFixed(6)}, ${a.lon.toFixed(6)}`, "wide-m"]
   ];
   $("r-fields").innerHTML = "";
-  fields.forEach(([label, value]) => {
+  const tip = document.createElement("div");
+  tip.className = "fields-tip";
+  tip.textContent = "Toca cualquier dato para copiarlo por separado.";
+  $("r-fields").appendChild(tip);
+  fields.forEach(([label, value, extra]) => {
     const d = document.createElement("button");
     d.type = "button";
-    d.className = "field"; d.title = "Clic para copiar";
-    d.innerHTML = "<small></small><b></b>";
+    d.className = "field" + (extra ? " " + extra : "");
+    d.setAttribute("aria-label", `Copiar ${label}: ${value}`);
+    d.innerHTML = '<span class="txt"><small></small><b></b></span>' +
+      '<span class="ico" aria-hidden="true">' +
+      '<svg class="cp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>' +
+      '<svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>' +
+      '</span>';
     d.querySelector("small").textContent = label;
     d.querySelector("b").textContent = value;
-    d.onclick = () => copy(value, label + " copiado");
+    d.onclick = () => {
+      copy(value, label + " copiado");
+      $("r-fields").querySelectorAll(".copied").forEach(x => x !== d && x.classList.remove("copied"));
+      d.classList.add("copied");
+      clearTimeout(d._t);
+      d._t = setTimeout(() => d.classList.remove("copied"), 1600);
+    };
     $("r-fields").appendChild(d);
   });
 
@@ -815,6 +847,7 @@ async function copy(text, msg = "Copiado") {
     t.value = text; document.body.appendChild(t); t.select();
     document.execCommand("copy"); t.remove();
   }
+  try { navigator.vibrate?.(15); } catch {}   // vibración cortita en móviles que lo permiten
   toast(msg);
 }
 
