@@ -11,6 +11,12 @@
 <meta name="apple-mobile-web-app-title" content="Direcciones">
 <meta name="format-detection" content="telephone=no">
 <title>Direcciones Residenciales</title>
+<!-- Logo: pestaña del navegador, escritorio del móvil (Android e iPhone) -->
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <style>
   :root {
     --bg: #f3f2ee;
@@ -148,8 +154,31 @@
   .hint { color: var(--muted); font-size: 12px; margin: 6px 2px 0; }
   kbd { font: 600 11px/1 ui-monospace, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 2px 5px; background: var(--card); }
 
-  .map { position: relative; aspect-ratio: 16 / 9; background: var(--chip); }
-  .map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  /* Mapa hecho con imágenes (mosaicos): carga igual en móvil y en PC, sin iframe */
+  .map { position: relative; aspect-ratio: 16 / 9; background: var(--chip); overflow: hidden; }
+  @supports not (aspect-ratio: 1) { .map { height: 0; padding-top: 56.25%; } }
+  .map .tiles { position: absolute; inset: 0; overflow: hidden; }
+  .map .tile {
+    position: absolute; left: 0; top: 0; width: 256px; height: 256px; max-width: none;
+    user-select: none; -webkit-user-drag: none; pointer-events: none; opacity: 0; transition: opacity .25s ease;
+  }
+  .map .tile.on { opacity: 1; }
+  .map .pin {
+    position: absolute; left: 50%; top: 50%; width: 34px; height: 46px; transform: translate(-50%, -100%);
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); pointer-events: none; z-index: 5;
+  }
+  .map .zoom { position: absolute; right: 10px; top: 10px; display: grid; gap: 6px; z-index: 6; }
+  .map .zoom button {
+    width: 40px; height: 40px; border-radius: 10px; border: 0; cursor: pointer; font: 700 22px/1 system-ui, sans-serif;
+    background: rgba(255,255,255,.92); color: #1b1c1a; box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  }
+  .map .zoom button:disabled { opacity: .45; cursor: default; }
+  .map .credit {
+    position: absolute; right: 0; bottom: 0; z-index: 6; max-width: 100%; padding: 2px 6px; font-size: 10px; line-height: 1.4;
+    background: rgba(255,255,255,.8); color: #333; border-top-left-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .map .map-msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; color: var(--muted); font-size: 14px; z-index: 1; }
+  .map .map-msg[hidden] { display: none; }
   .links { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 22px 18px; }
 
   h2 { font-size: 15px; margin: 30px 0 10px; color: var(--muted); font-weight: 600; }
@@ -253,7 +282,19 @@
     </div>
     <div class="fields" id="r-fields"></div>
     <div class="phone" id="r-phone" aria-live="polite"></div>
-    <div class="map"><iframe id="r-map" title="Mapa satelital" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    <div class="map">
+      <div class="map-msg" id="r-map-msg" hidden>No se pudo cargar el mapa. Usa «Abrir en Google Maps».</div>
+      <div class="tiles" id="r-map" role="img" aria-label="Vista de la ubicación en el mapa"></div>
+      <svg class="pin" viewBox="0 0 34 46" aria-hidden="true">
+        <path d="M17 1C8.2 1 1 8 1 16.7 1 28.5 17 45 17 45s16-16.5 16-28.3C33 8 25.8 1 17 1z" fill="#e5372b" stroke="#fff" stroke-width="2"/>
+        <circle cx="17" cy="17" r="6" fill="#fff"/>
+      </svg>
+      <div class="zoom">
+        <button type="button" id="z-in" aria-label="Acercar">+</button>
+        <button type="button" id="z-out" aria-label="Alejar">−</button>
+      </div>
+      <div class="credit" id="r-credit"></div>
+    </div>
     <div class="links">
       <a class="btn" id="l-gmaps" target="_blank" rel="noopener">Abrir en Google Maps</a>
       <a class="btn" id="l-street" target="_blank" rel="noopener">Ver Street View</a>
@@ -272,7 +313,7 @@
   <ul id="history"></ul>
 
   <footer>
-    Datos © colaboradores de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (ODbL), vía Photon (komoot), Nominatim y Overpass.
+    Datos © colaboradores de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (ODbL), vía Photon (komoot), Nominatim y Overpass. Imágenes satelitales © Esri.
     Los teléfonos son de negocios y lugares públicos que los publicaron en OpenStreetMap, nunca de las viviendas.
   </footer>
 </div>
@@ -760,9 +801,80 @@ function show(a) {
   $("l-osm").href = a.osmUrl;
 }
 
+// ---------- Mapa con mosaicos ----------
+// Antes era un iframe de Google Maps, que en móviles a veces se quedaba en gris.
+// Ahora se arma con imágenes de 256×256 (como hacen las apps de mapas por dentro).
+const TILE = 256;
+const MAP_LAYERS = {
+  k: {   // satélite + nombres de calles encima
+    urls: [
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}"
+    ],
+    credit: "Imágenes © Esri, Maxar, Earthstar Geographics"
+  },
+  m: {   // mapa de calles
+    urls: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+    credit: "© colaboradores de OpenStreetMap"
+  }
+};
+const ZOOM_MIN = 14, ZOOM_MAX = 19;
+let mapZoom = 18;
+const tiles = new Map();    // mosaicos en pantalla, para reutilizarlos y no volver a descargarlos
+let tileErrors = 0;
+
+// Convierte lat/lon a píxeles del "mundo" en un nivel de zoom (proyección de Google/OSM).
+function project(lat, lon, z) {
+  const size = TILE * 2 ** z;
+  const s = Math.sin(lat * Math.PI / 180);
+  return [(lon + 180) / 360 * size, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * size];
+}
+
+function drawMap() {
+  const box = $("r-map");
+  if (!current || !box) return;
+  const w = box.clientWidth, h = box.clientHeight;
+  if (!w || !h) return;     // todavía no se ve; ResizeObserver volverá a llamar
+  const layer = MAP_LAYERS[mapType];
+  const [cx, cy] = project(current.lat, current.lon, mapZoom);
+  const left = cx - w / 2, top = cy - h / 2;
+  const n = 2 ** mapZoom;
+  const want = new Set();
+  for (let ty = Math.floor(top / TILE); ty <= Math.floor((top + h) / TILE); ty++) {
+    if (ty < 0 || ty >= n) continue;
+    for (let tx = Math.floor(left / TILE); tx <= Math.floor((left + w) / TILE); tx++) {
+      const x = ((tx % n) + n) % n;
+      layer.urls.forEach((url, i) => {
+        const key = `${mapType}/${mapZoom}/${tx}/${ty}/${i}`;
+        want.add(key);
+        let img = tiles.get(key);
+        if (!img) {
+          img = new Image();
+          img.className = "tile";
+          img.alt = "";
+          img.decoding = "async";
+          img.onload = () => { img.classList.add("on"); tileErrors = 0; $("r-map-msg").hidden = true; };
+          img.onerror = () => { if (++tileErrors > 6) $("r-map-msg").hidden = false; };
+          img.src = url.replace("{z}", mapZoom).replace("{x}", x).replace("{y}", ty);
+          img.style.zIndex = i;
+          tiles.set(key, img);
+          box.appendChild(img);
+        }
+        img.style.transform = `translate(${Math.round(tx * TILE - left)}px, ${Math.round(ty * TILE - top)}px)`;
+      });
+    }
+  }
+  for (const [key, img] of tiles) if (!want.has(key)) { img.remove(); tiles.delete(key); }
+  $("r-credit").textContent = layer.credit;
+  $("z-in").disabled = mapZoom >= ZOOM_MAX;
+  $("z-out").disabled = mapZoom <= ZOOM_MIN;
+}
+
 function renderMap() {
   if (!current) return;
-  $("r-map").src = `https://maps.google.com/maps?q=${current.lat},${current.lon}&t=${mapType}&z=19&output=embed`;
+  tileErrors = 0;
+  $("r-map-msg").hidden = true;
+  drawMap();
   $("t-map").textContent = mapType === "k" ? "Vista: satélite" : "Vista: mapa";
 }
 
@@ -889,6 +1001,11 @@ document.querySelectorAll(".seg button").forEach(b => {
 $("go").onclick = generate;
 $("copy-all").onclick = () => current && copy(oneLine(current), "Dirección copiada");
 $("t-map").onclick = () => { mapType = mapType === "k" ? "m" : "k"; renderMap(); };
+$("z-in").onclick = () => { mapZoom = Math.min(ZOOM_MAX, mapZoom + 1); drawMap(); };
+$("z-out").onclick = () => { mapZoom = Math.max(ZOOM_MIN, mapZoom - 1); drawMap(); };
+// Redibuja el mapa si cambia de tamaño (girar el móvil, cambiar el ancho de la ventana).
+if ("ResizeObserver" in window) new ResizeObserver(() => drawMap()).observe($("r-map"));
+else window.addEventListener("resize", drawMap);
 $("h-csv").onclick = exportCSV;
 $("h-clear").onclick = clearHistory;
 
