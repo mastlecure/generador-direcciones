@@ -29,6 +29,7 @@
     --accent-ink: #ffffff;
     --accent-soft: #dcefe6;
     --err: #b3261e;
+    --star: #a86a00;
     --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
   }
   @media (prefers-color-scheme: dark) {
@@ -43,6 +44,7 @@
       --accent-ink: #0c1a14;
       --accent-soft: #1d3329;
       --err: #f2b8b5;
+      --star: #f2c14e;
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
     }
   }
@@ -126,7 +128,7 @@
   .fields-tip { grid-column: 1 / -1; padding: 8px 22px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); }
   @media (hover: hover) { .field:hover { background: var(--chip); } }
   .field:active { background: var(--chip); }
-  .field:focus-visible, .btn:focus-visible, #go:focus-visible, .seg button:focus-visible, #history li button:focus-visible {
+  .field:focus-visible, .btn:focus-visible, #go:focus-visible, .seg button:focus-visible, .list li button:focus-visible {
     outline: 2px solid var(--accent); outline-offset: -2px;
   }
   .field small { display: block; color: var(--muted); font-size: 12px; }
@@ -146,6 +148,40 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .phone.wait .meta::before { animation: none; } }
+  /* Los otros 2 teléfonos cercanos */
+  .phone .others { flex-basis: 100%; border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 10px; }
+  .phone .other { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .phone .other > div { min-width: 0; }
+  .phone .onum { font-weight: 700; color: var(--ink); text-decoration: none; }
+
+  /* Buscar ciudad o código postal */
+  .place { display: flex; gap: 8px; margin: -4px 0 12px; }
+  .place input {
+    flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px;
+  }
+  .place input:focus-visible, .favbox textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .alts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -4px 0 12px; font-size: 13px; color: var(--muted); }
+  .alts:empty { display: none; }
+  .chip { border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-size: 13px; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+
+  /* Botones de la dirección: copiar, copiar con teléfono, favorito */
+  .addr-acts { display: grid; gap: 8px; flex: none; min-width: 200px; }
+  .addr-acts .btn { justify-content: center; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  #fav-btn[aria-pressed="true"] { color: var(--star); border-color: var(--star); }
+
+  /* Notas del favorito */
+  .favbox { padding: 0 22px 16px; }
+  .favbox[hidden] { display: none; }
+  .favbox label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .favbox textarea {
+    width: 100%; min-height: 80px; resize: vertical; font: inherit; font-size: 16px; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  }
+  #note-saved { color: var(--accent); font-weight: 600; }
+  .note-prev { display: block; font-size: 13px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .star { color: var(--star); margin-right: 6px; }
 
   .hist-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 30px 0 10px; }
   .hist-head h2 { margin: 0; }
@@ -182,14 +218,14 @@
   .links { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 22px 18px; }
 
   h2 { font-size: 15px; margin: 30px 0 10px; color: var(--muted); font-weight: 600; }
-  #history { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  #history li button {
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .list li button {
     width: 100%; text-align: left; border: 1px solid var(--line); background: var(--card); color: var(--ink);
     font: inherit; padding: 10px 14px; border-radius: 10px; cursor: pointer; overflow-wrap: anywhere;
   }
-  @media (hover: hover) { #history li button:hover { border-color: var(--muted); } }
-  #history li button:active { background: var(--chip); }
-  #history .cc {
+  @media (hover: hover) { .list li button:hover { border-color: var(--muted); } }
+  .list li button:active { background: var(--chip); }
+  .list .cc {
     display: inline-block; font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-soft);
     border-radius: 6px; padding: 1px 6px; margin-right: 8px; vertical-align: 1px;
   }
@@ -232,7 +268,13 @@
 
     .addr { flex-direction: column; gap: 12px; padding: 18px 16px 14px; }
     .addr .lines { font-size: 19px; }
-    #copy-all { width: 100%; justify-content: center; padding: 12px; }
+    .addr-acts { grid-template-columns: 1fr 1fr; width: 100%; min-width: 0; }
+    .addr-acts .btn { padding: 12px 8px; white-space: normal; text-align: center; }
+    #copy-all { grid-column: 1 / -1; }
+    .favbox { padding: 0 16px 16px; }
+    .place input { padding: 12px; }
+    .place .btn { padding: 12px 14px; }
+    .chip { padding: 8px 13px; }
     .fields { grid-template-columns: 1fr 1fr; }
     .field { padding: 12px 12px 12px 16px; min-height: 60px; }
     .field.wide-m { grid-column: 1 / -1; }
@@ -247,7 +289,7 @@
     .links .btn { justify-content: center; padding: 12px 8px; white-space: normal; text-align: center; }
 
     .hist-head .btn.small { padding: 9px 12px; }
-    #history li button { padding: 13px 14px; }
+    .list li button { padding: 13px 14px; }
     #toast { bottom: calc(100px + env(safe-area-inset-bottom)); max-width: calc(100% - 32px); text-align: center; }
   }
 </style>
@@ -267,6 +309,11 @@
     </div>
     <select id="city" aria-label="Ciudad"></select>
   </div>
+  <form class="place" id="place-form" role="search" autocomplete="off">
+    <input id="place-q" type="search" enterkeyhint="search" placeholder="Ciudad o código postal (ej. Orlando, 33101, M5V)" aria-label="Buscar ciudad o código postal">
+    <button class="btn" id="place-go" type="submit">Buscar</button>
+  </form>
+  <div class="alts" id="place-alts"></div>
 
   <div class="gobar"><button id="go" type="button">Generar dirección</button></div>
   <p class="hint">Atajo: pulsa <kbd>G</kbd> para generar otra.</p>
@@ -278,7 +325,15 @@
         <span class="badge" id="r-type"></span>
         <div class="lines" id="r-lines"></div>
       </div>
-      <button class="btn primary" id="copy-all" type="button">Copiar</button>
+      <div class="addr-acts">
+        <button class="btn primary" id="copy-all" type="button">Copiar</button>
+        <button class="btn" id="copy-phone" type="button">Copiar con teléfono</button>
+        <button class="btn" id="fav-btn" type="button" aria-pressed="false">☆ Guardar en favoritos</button>
+      </div>
+    </div>
+    <div class="favbox" id="favbox" hidden>
+      <label for="r-note"><span>Notas</span><span id="note-saved"></span></label>
+      <textarea id="r-note" rows="3" placeholder="Escribe aquí lo que quieras recordar de esta dirección…"></textarea>
     </div>
     <div class="fields" id="r-fields"></div>
     <div class="phone" id="r-phone" aria-live="polite"></div>
@@ -304,13 +359,18 @@
   </section>
 
   <div class="hist-head">
+    <h2>⭐ Favoritos <span id="fav-count"></span></h2>
+  </div>
+  <ul id="favs" class="list"></ul>
+
+  <div class="hist-head">
     <h2>Historial</h2>
     <div class="acts">
       <button class="btn small" id="h-csv" type="button">Exportar CSV</button>
       <button class="btn small" id="h-clear" type="button">Borrar</button>
     </div>
   </div>
-  <ul id="history"></ul>
+  <ul id="history" class="list"></ul>
 
   <footer>
     Datos © colaboradores de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (ODbL), vía Photon (komoot), Nominatim y Overpass. Imágenes satelitales © Esri.
@@ -567,52 +627,70 @@ function phoneCandidate(a, tags, lat, lon, osmType, osmId) {
     osmUrl: `https://www.openstreetmap.org/${osmType}/${osmId}`
   };
 }
-const nearest = (list) => list.filter(Boolean).sort((x, y) => x.distance - y.distance)[0] || null;
+// Los 3 más cercanos, sin repetir número (una cadena puede tener varios locales con el mismo teléfono).
+const MAX_PHONES = 3;
+function topPhones(list) {
+  const out = [];
+  for (const c of list.filter(Boolean).sort((x, y) => x.distance - y.distance)) {
+    if (!out.some(o => o.tel === c.tel)) out.push(c);
+    if (out.length === MAX_PHONES) break;
+  }
+  return out;
+}
 
-async function phoneFromOverpass(a) {
+// Cada radio más grande ya incluye los resultados del anterior: se amplía solo hasta tener 3.
+async function phonesFromOverpass(a) {
+  let found = [];
   for (const r of PHONE_RADII) {
     const around = `around:${r},${a.lat.toFixed(6)},${a.lon.toFixed(6)}`;
     // timeout y maxsize bajos: los servidores aceptan antes las consultas "ligeras".
     const q = `[out:json][timeout:8][maxsize:8000000];(nw(${around})["phone"]["name"];nw(${around})["contact:phone"]["name"];);out center tags 80;`;
-    const data = await overpass(q);
-    const best = nearest((data.elements || []).map(el =>
-      phoneCandidate(a, el.tags || {}, el.lat ?? el.center?.lat, el.lon ?? el.center?.lon, el.type, el.id)));
-    if (best) return best;
+    let data;
+    try { data = await overpass(q); } catch (e) { if (found.length) break; throw e; }
+    found = (data.elements || []).map(el =>
+      phoneCandidate(a, el.tags || {}, el.lat ?? el.center?.lat, el.lon ?? el.center?.lon, el.type, el.id));
+    if (topPhones(found).length >= MAX_PHONES) break;
   }
-  return null;
+  return topPhones(found);
 }
 
-async function phoneFromNominatim(a) {
+async function phonesFromNominatim(a) {
+  let found = [];
   for (const d of NOMINATIM_BOXES) {
     const dLon = d / Math.cos(a.lat * Math.PI / 180);
     const viewbox = [a.lon - dLon, a.lat + d, a.lon + dLon, a.lat - d].map(n => n.toFixed(5)).join(",");
-    const found = [];
-    for (const q of NOMINATIM_CATS) {
-      await sleep(1100);  // Nominatim pide máximo 1 consulta por segundo
-      const p = new URLSearchParams({ format: "jsonv2", q, viewbox, bounded: "1", extratags: "1", limit: "40", "accept-language": "en" });
-      const res = await fetch("https://nominatim.openstreetmap.org/search?" + p, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) throw new Error("Nominatim HTTP " + res.status);
-      for (const x of await res.json()) {
-        const tags = { ...(x.extratags || {}), name: x.name, [x.category]: x.type };
-        found.push(phoneCandidate(a, tags, +x.lat, +x.lon, x.osm_type, x.osm_id));
+    const box = [];
+    try {
+      for (const q of NOMINATIM_CATS) {
+        await sleep(1100);  // Nominatim pide máximo 1 consulta por segundo
+        const p = new URLSearchParams({ format: "jsonv2", q, viewbox, bounded: "1", extratags: "1", limit: "40", "accept-language": "en" });
+        const res = await fetch("https://nominatim.openstreetmap.org/search?" + p, { signal: AbortSignal.timeout(12000) });
+        if (!res.ok) throw new Error("Nominatim HTTP " + res.status);
+        for (const x of await res.json()) {
+          const tags = { ...(x.extratags || {}), name: x.name, [x.category]: x.type };
+          box.push(phoneCandidate(a, tags, +x.lat, +x.lon, x.osm_type, x.osm_id));
+        }
       }
-    }
-    const best = nearest(found);
-    if (best) return best;
+    } catch (e) { if (found.length) break; throw e; }
+    found = box;
+    if (topPhones(found).length >= MAX_PHONES) break;
   }
-  return null;
+  return topPhones(found);
 }
 
-async function findNearestPhone(a) {
+async function findNearestPhones(a) {
   if (Date.now() > overpassDownUntil) {
     try {
-      return await phoneFromOverpass(a);
+      return await phonesFromOverpass(a);
     } catch {
       overpassDownUntil = Date.now() + 120000;   // Overpass saturado: no insistir por 2 minutos
     }
   }
-  return phoneFromNominatim(a);
+  return phonesFromNominatim(a);
 }
+
+// Direcciones guardadas antes de esta versión solo tienen un teléfono (a.phone).
+const phonesOf = (a) => a.phones || (a.phone && typeof a.phone === "object" ? [a.phone] : []);
 
 const fmtDistance = (m) => m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
 
@@ -624,8 +702,9 @@ function renderPhone(a) {
   const acts = document.createElement("div");
   acts.className = "acts";
   const label = document.createElement("small");
-  label.textContent = "Teléfono público más cercano";
+  label.textContent = phonesOf(a).length > 1 ? "Teléfonos públicos más cercanos" : "Teléfono público más cercano";
   info.appendChild(label);
+  let others = null;
 
   const meta = (txt) => { const m = document.createElement("div"); m.className = "meta"; m.textContent = txt; return m; };
   const button = (txt, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = txt; b.onclick = fn; return b; };
@@ -635,11 +714,11 @@ function renderPhone(a) {
     info.appendChild(meta("Buscando negocios cercanos con teléfono…"));
   } else if (a.phone === "error") {
     info.appendChild(meta("No se pudo consultar el servidor de teléfonos."));
-    acts.appendChild(button("Reintentar", () => { delete a.phone; loadPhone(a); }));
-  } else if (!a.phone) {
+    acts.appendChild(button("Reintentar", () => { delete a.phone; delete a.phones; loadPhone(a); }));
+  } else if (!phonesOf(a).length) {
     info.appendChild(meta("No hay negocios con teléfono registrados cerca de esta dirección."));
   } else {
-    const p = a.phone;
+    const [p, ...rest] = phonesOf(a);
     const num = document.createElement("a");
     num.className = "num"; num.href = "tel:" + p.tel; num.textContent = p.display;
     info.appendChild(num);
@@ -653,24 +732,63 @@ function renderPhone(a) {
     link.className = "btn"; link.target = "_blank"; link.rel = "noopener";
     link.href = p.osmUrl; link.textContent = "Ver lugar";
     acts.appendChild(link);
+
+    if (rest.length) {                        // los otros 2, más pequeños, por si prefieres otro
+      others = document.createElement("div");
+      others.className = "others";
+      const t = document.createElement("small");
+      t.textContent = "Otros cercanos";
+      others.appendChild(t);
+      rest.forEach(q => {
+        const row = document.createElement("div");
+        row.className = "other";
+        const txt = document.createElement("div");
+        const n = document.createElement("a");
+        n.className = "onum"; n.href = "tel:" + q.tel; n.textContent = q.display;
+        txt.append(n, meta(`${q.name} · ${q.category} · a ${fmtDistance(q.distance)}`));
+        const c = button("Copiar", () => copy(q.display, "Teléfono copiado"));
+        c.classList.add("small");
+        row.append(txt, c);
+        others.appendChild(row);
+      });
+    }
   }
   box.append(info, acts);
+  if (others) box.appendChild(others);
 }
 
-const phoneLoading = new WeakSet();   // evita lanzar dos búsquedas para la misma dirección
+// Una sola búsqueda de teléfonos por dirección, aunque la pidan varias partes a la vez
+// (la vista actual y la dirección que se prepara por adelantado).
+const phoneJobs = new WeakMap();
+function phoneJob(a) {
+  if (a.phone !== undefined) return Promise.resolve();
+  if (!phoneJobs.has(a)) {
+    phoneJobs.set(a, findNearestPhones(a)
+      .then(list => { a.phones = list; a.phone = list[0] || null; }, () => { a.phone = "error"; })
+      .finally(() => phoneJobs.delete(a)));
+  }
+  return phoneJobs.get(a);
+}
 
 async function loadPhone(a) {
   renderPhone(a);
-  if (a.phone !== undefined || phoneLoading.has(a)) return;  // ya buscado (historial) o en curso
-  phoneLoading.add(a);
-  try {
-    a.phone = await findNearestPhone(a);
-  } catch {
-    a.phone = "error";
-  }
-  phoneLoading.delete(a);
-  if (a.phone !== "error") updateHistory(a);                // guarda el resultado para no repetir la consulta
-  if (current === a) renderPhone(a);                        // por si el usuario ya cambió de dirección
+  renderCopyPhone();
+  if (a.phone !== undefined) return;          // ya buscado (historial, favorito o preparado antes)
+  await phoneJob(a);
+  if (a.phone !== "error") persist(a);        // guarda el resultado para no repetir la consulta
+  if (current === a) { renderPhone(a); renderCopyPhone(); }   // por si el usuario ya cambió de dirección
+}
+
+// "Copiar con teléfono": la dirección en una línea y debajo el teléfono más cercano.
+function addressWithPhone(a) {
+  const p = phonesOf(a)[0];
+  return p ? `${oneLine(a)}\n${p.display}` : oneLine(a);
+}
+function renderCopyPhone() {
+  const b = $("copy-phone");
+  const waiting = !current || current.phone === undefined;
+  b.disabled = waiting;
+  b.textContent = waiting ? "Buscando teléfono…" : "Copiar con teléfono";
 }
 
 // ---------- Generar ----------
@@ -680,13 +798,170 @@ async function generate() {
   btn.disabled = true;
   btn.textContent = "Buscando…";
   try {
-    await searchAddress();
+    if (!navigator.onLine) {
+      setStatus("Sin internet. Puedes ver tus favoritos y el historial; vuelve a intentarlo con conexión.", true);
+      return;
+    }
+    const key = choiceKey();
+    let r;
+    if (prefetch && prefetch.key === key) {    // ya había una preparada: se usa al instante
+      const job = prefetch;
+      prefetch = null;
+      setStatus("Casi lista…");
+      r = await job.promise;
+      if (!r.addr) r = await findAddress($("city").value, setStatus);
+    } else {
+      discardPrefetch();
+      r = await findAddress($("city").value, setStatus);
+    }
+    if (r.addr) {
+      const addr = r.addr;
+      show(addr);
+      addHistory(addr);
+      setStatus(`Encontrada en ${addr.city}, ${addr.state}.`);
+      if (isMobile()) revealResult();
+      startPrefetch();
+    } else {
+      setStatus(r.error === "net"
+        ? "No se pudo conectar con el servidor de mapas. Revisa tu internet e inténtalo de nuevo."
+        : "No encontré casas en esta zona. Vuelve a intentarlo.", true);
+    }
   } catch (e) {
     console.error(e);
     setStatus("Ocurrió un error inesperado. Inténtalo de nuevo.", true);
   } finally {
     btn.disabled = false;   // el botón nunca se queda bloqueado
     btn.textContent = current ? "Generar otra dirección" : "Generar dirección";
+  }
+}
+
+// ---------- Siguiente dirección preparada por adelantado ----------
+// Mientras miras una dirección, se busca la siguiente (y su teléfono) en segundo plano.
+// Empieza cuando termina el teléfono de la actual, para no hacer dos consultas a la vez.
+let prefetch = null;        // { key, promise }
+
+function discardPrefetch() {
+  if (!prefetch) return;
+  const job = prefetch;
+  prefetch = null;
+  job.promise.then(r => { if (r.addr) seen.delete(r.addr.id); });   // que pueda volver a salir
+}
+
+function startPrefetch() {
+  discardPrefetch();
+  if (!navigator.onLine) return;
+  const value = $("city").value;
+  const job = { key: choiceKey() };
+  prefetch = job;
+  job.promise = (async () => {
+    if (current) await phoneJob(current);
+    if (prefetch !== job) return {};
+    const r = await findAddress(value).catch(() => ({ error: "net" }));
+    if (r.addr && prefetch === job) await phoneJob(r.addr);
+    return r;
+  })();
+  job.promise.then(r => {
+    if (prefetch === job && r.addr && !$("go").disabled) $("go").textContent = "Generar otra dirección ⚡";
+  });
+}
+
+// La opción elegida (país + ciudad o lugar buscado) identifica qué dirección sirve como "siguiente".
+function choiceKey() {
+  const v = $("city").value;
+  const place = v.startsWith("P|") ? places[+v.split("|")[1]]?.label : "";
+  return `${country}|${v}|${place}`;
+}
+
+// Devuelve [país, ciudad] según lo elegido. "Cualquier ciudad" elige al azar en cada intento.
+function resolveChoice(value) {
+  if (value) {
+    const [kind, i] = value.split("|");
+    if (kind === "P") { const pl = places[+i]; if (pl) return [pl.cc, pl.city]; }
+    else if (CITIES[kind]?.[+i]) return [kind, CITIES[kind][+i]];
+  }
+  const cc = country === "ALL" ? pick(["US", "CA"]) : country;
+  return [cc, pick(CITIES[cc])];
+}
+
+// ---------- Buscar cualquier ciudad o código postal (Photon) ----------
+let places = [];            // últimos lugares buscados: { cc, label, city: [nombre, estado, lat, lon, km] }
+try { places = JSON.parse(localStorage.getItem("dir-lugares") || "[]"); } catch {}
+function savePlaces() { try { localStorage.setItem("dir-lugares", JSON.stringify(places)); } catch {} }
+
+const PLACE_KINDS = new Set(["city", "town", "village", "hamlet", "suburb", "borough", "neighbourhood", "quarter", "municipality", "postcode"]);
+
+async function searchPlaces(text) {
+  const p = new URLSearchParams({ q: text, limit: "15", lang: "en" });
+  const res = await fetch("https://photon.komoot.io/api/?" + p, { signal: AbortSignal.timeout(12000) });
+  if (!res.ok) throw new Error("Photon HTTP " + res.status);
+  const out = [];
+  for (const f of (await res.json()).features || []) {
+    const q = f.properties;
+    const cc = (q.countrycode || "").toUpperCase();
+    const isPlace = q.osm_key === "place" && PLACE_KINDS.has(q.osm_value);
+    const isAdmin = q.osm_key === "boundary" && q.osm_value === "administrative" && (q.type === "city" || q.type === "district");
+    if (!COUNTRY_NAME[cc] || !(isPlace || isAdmin)) continue;
+    const [lon, lat] = f.geometry.coordinates;
+    const postcode = q.osm_value === "postcode";
+    // Radio de búsqueda según el tamaño del lugar.
+    let km = 5;
+    if (postcode) km = 2.5;
+    else if (["hamlet", "neighbourhood", "quarter"].includes(q.osm_value)) km = 1.5;
+    else if (q.extent) {
+      const [w, n, e, s] = q.extent;
+      km = Math.min(12, Math.max(2, distanceM(n, w, s, e) / 1000 / 4));
+    }
+    const state = stateCode(q.state, "");
+    const name = postcode ? (q.city || q.county || q.name) : q.name;
+    const label = (postcode ? `${q.postcode || q.name}${q.city ? " · " + q.city : ""}` : q.name) + (state ? `, ${state}` : "");
+    if (out.some(o => o.label === label)) continue;
+    out.push({ cc, label, city: [name, state, lat, lon, +km.toFixed(1)] });
+    if (out.length === 5) break;
+  }
+  return out;
+}
+
+function usePlace(pl) {
+  places = [pl, ...places.filter(x => x.label !== pl.label)].slice(0, 6);
+  savePlaces();
+  fillCities();
+  $("city").value = "P|0";
+}
+
+function renderAlts(list) {
+  const box = $("place-alts");
+  box.innerHTML = "";
+  if (!list.length) return;
+  box.append("¿Otro lugar?");
+  list.forEach(pl => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip";
+    b.textContent = `${pl.label} (${pl.cc})`;
+    b.onclick = () => { usePlace(pl); box.innerHTML = ""; setStatus(`Ubicación: ${pl.label}.`); generate(); };
+    box.appendChild(b);
+  });
+}
+
+async function onPlaceSearch(e) {
+  e.preventDefault();
+  const text = $("place-q").value.trim();
+  if (text.length < 2) { toast("Escribe una ciudad o un código postal"); return; }
+  const btn = $("place-go");
+  btn.disabled = true;
+  $("place-alts").innerHTML = "";
+  setStatus(`Buscando «${text}»…`);
+  try {
+    const found = await searchPlaces(text);
+    if (!found.length) { setStatus("No encontré esa ciudad o código postal en EE.UU. o Canadá.", true); return; }
+    usePlace(found[0]);
+    renderAlts(found.slice(1));
+    $("place-q").blur();                     // cierra el teclado del móvil
+    setStatus(`Ubicación: ${found[0].label}.`);
+    generate();
+  } catch {
+    setStatus("No se pudo buscar la ubicación. Revisa tu internet.", true);
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -698,21 +973,14 @@ function revealResult() {
   else window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
 }
 
-async function searchAddress() {
-  setStatus("Buscando…");
-  const chosen = $("city").value;
+// Busca una casa con dirección completa. No toca la pantalla: solo informa del avance.
+async function findAddress(value, progress = () => {}) {
   let lastError = null;
 
   for (let i = 1; i <= MAX_TRIES; i++) {
-    let cc, city;
-    if (chosen) {
-      [cc, city] = [chosen.split("|")[0], CITIES[chosen.split("|")[0]][+chosen.split("|")[1]]];
-    } else {
-      cc = country === "ALL" ? pick(["US", "CA"]) : country;
-      city = pick(CITIES[cc]);
-    }
+    const [cc, city] = resolveChoice(value);
     const [lat, lon] = randomPoint(city);
-    setStatus(`Buscando casas en ${city[0]}, ${city[1]}…${i > 1 ? ` (intento ${i})` : ""}`);
+    progress(`Buscando casas en ${city[0]}${city[1] ? ", " + city[1] : ""}…${i > 1 ? ` (intento ${i})` : ""}`);
 
     let list = [];
     try {
@@ -730,18 +998,11 @@ async function searchAddress() {
       const addr = pick(list);
       seen.add(addr.id);
       await fixCity(addr, city);
-      show(addr);
-      addHistory(addr);
-      setStatus(`Encontrada en ${addr.city}, ${addr.state}.`);
-      if (isMobile()) revealResult();
-      return;
+      return { addr };
     }
     await sleep(400);
   }
-
-  setStatus(lastError
-    ? "No se pudo conectar con el servidor de mapas. Revisa tu internet e inténtalo de nuevo."
-    : "No encontré casas en esta zona. Vuelve a intentarlo.", true);
+  return { error: lastError ? "net" : "none" };
 }
 
 // ---------- Mostrar resultado ----------
@@ -794,6 +1055,7 @@ function show(a) {
     $("r-fields").appendChild(d);
   });
 
+  renderFavState();
   loadPhone(a);
   renderMap();
   $("l-gmaps").href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(oneLine(a));
@@ -854,7 +1116,13 @@ function drawMap() {
           img.alt = "";
           img.decoding = "async";
           img.onload = () => { img.classList.add("on"); tileErrors = 0; $("r-map-msg").hidden = true; };
-          img.onerror = () => { if (++tileErrors > 6) $("r-map-msg").hidden = false; };
+          img.onerror = () => {
+            if (++tileErrors <= 6) return;
+            $("r-map-msg").textContent = navigator.onLine
+              ? "No se pudo cargar el mapa. Usa «Abrir en Google Maps»."
+              : "Sin internet: el mapa no está disponible.";
+            $("r-map-msg").hidden = false;
+          };
           img.src = url.replace("{z}", mapZoom).replace("{x}", x).replace("{y}", ty);
           img.style.zIndex = i;
           tiles.set(key, img);
@@ -899,20 +1167,121 @@ function updateHistory(a) {
   const list = loadHistory();
   if (list.some(x => x === a)) saveHistory(list);
 }
+// Guarda los teléfonos recién encontrados en el historial y, si es favorita, también allí.
+function persist(a) {
+  updateHistory(a);
+  const favs = loadFavs();
+  const f = favs.find(x => x.id === a.id);
+  if (f) {
+    if (f !== a) { f.phone = a.phone; f.phones = a.phones; }
+    saveFavs(favs);
+  }
+}
+
+// ---------- Favoritos con notas (no se borran con el historial) ----------
+let memFavs = null;
+function loadFavs() {
+  if (memFavs) return memFavs;
+  try { memFavs = JSON.parse(localStorage.getItem("dir-favoritos") || "[]"); } catch { memFavs = []; }
+  return memFavs;
+}
+function saveFavs(list) {
+  memFavs = list;
+  try { localStorage.setItem("dir-favoritos", JSON.stringify(list)); } catch {}
+}
+const getFav = (id) => loadFavs().find(f => f.id === id);
+
+function toggleFav() {
+  if (!current) return;
+  const fav = getFav(current.id);
+  if (fav) {
+    if (fav.note && !confirm("Esta dirección tiene notas. ¿Quitarla de favoritos y borrar sus notas?")) return;
+    saveFavs(loadFavs().filter(f => f.id !== current.id));
+    toast("Quitada de favoritos");
+  } else {
+    const copyOf = JSON.parse(JSON.stringify(current));
+    saveFavs([{ ...copyOf, note: "", favAt: Date.now() }, ...loadFavs()]);
+    toast("Guardada en favoritos ⭐");
+  }
+  renderFavState();
+  renderFavs();
+  renderHistory();
+  if (getFav(current.id) && !isMobile()) $("r-note").focus();
+}
+
+function renderFavState() {
+  const fav = current && getFav(current.id);
+  const b = $("fav-btn");
+  b.setAttribute("aria-pressed", String(!!fav));
+  b.textContent = fav ? "★ En favoritos" : "☆ Guardar en favoritos";
+  $("favbox").hidden = !fav;
+  $("note-saved").textContent = "";
+  if (fav && document.activeElement !== $("r-note")) $("r-note").value = fav.note || "";
+}
+
+// Las notas se guardan solas mientras escribes (medio segundo después de la última tecla).
+let noteTimer;
+function onNoteInput() {
+  const fav = current && getFav(current.id);
+  if (!fav) return;
+  const text = $("r-note").value;              // se toma ya, por si cambias de dirección enseguida
+  $("note-saved").textContent = "Guardando…";
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => {
+    fav.note = text;
+    saveFavs(loadFavs());
+    $("note-saved").textContent = "Guardado ✓";
+    renderFavs();
+  }, 500);
+}
+
+function renderFavs() {
+  const ul = $("favs");
+  const list = loadFavs();
+  $("fav-count").textContent = list.length ? `(${list.length})` : "";
+  ul.innerHTML = "";
+  if (!list.length) {
+    ul.innerHTML = '<li class="empty">Toca «☆ Guardar en favoritos» en una dirección para tenerla siempre aquí, con tus notas.</li>';
+    return;
+  }
+  list.forEach(f => {
+    seen.add(f.id);
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    const tag = document.createElement("span");
+    tag.className = "cc";
+    tag.textContent = f.cc;
+    b.append(tag, oneLine(f));
+    if (f.note) {
+      const n = document.createElement("span");
+      n.className = "note-prev";
+      n.textContent = "📝 " + f.note.replace(/\s+/g, " ");
+      b.appendChild(n);
+    }
+    b.onclick = () => { show(f); revealResult(); };
+    li.appendChild(b);
+    ul.appendChild(li);
+  });
+}
 function clearHistory() {
   if (!loadHistory().length || !confirm("¿Borrar todo el historial de este navegador?")) return;
   saveHistory([]);
   renderHistory();
 }
 function exportCSV() {
-  const list = loadHistory();
-  if (!list.length) { toast("El historial está vacío"); return; }
+  // Favoritos (con sus notas) primero, luego el historial sin repetir.
+  const favs = loadFavs();
+  const list = [...favs, ...loadHistory().filter(h => !favs.some(f => f.id === h.id))];
+  if (!list.length) { toast("No hay direcciones para exportar"); return; }
   const head = ["numero", "calle", "ciudad", "estado", "codigo_postal", "pais", "latitud", "longitud",
-                "telefono_cercano", "lugar_del_telefono", "distancia_m"];
+                "telefono_cercano", "lugar_del_telefono", "distancia_m", "otros_telefonos", "favorito", "notas"];
   const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const rows = list.map(a => {
-    const p = a.phone && typeof a.phone === "object" ? a.phone : {};
-    return [a.number, a.street, a.city, a.state, a.postcode, a.country, a.lat, a.lon, p.display, p.name, p.distance].map(esc).join(",");
+    const [p = {}, ...rest] = phonesOf(a);
+    const fav = favs.find(f => f.id === a.id);
+    return [a.number, a.street, a.city, a.state, a.postcode, a.country, a.lat, a.lon, p.display, p.name, p.distance,
+            rest.map(q => `${q.display} (${q.name})`).join(" | "), fav ? "sí" : "no", fav?.note].map(esc).join(",");
   });
   // El BOM (﻿) hace que Excel lea bien los acentos.
   const blob = new Blob(["﻿" + [head.join(","), ...rows].join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -938,6 +1307,11 @@ function renderHistory() {
     const tag = document.createElement("span");
     tag.className = "cc";
     tag.textContent = a.cc;
+    if (getFav(a.id)) {
+      const s = document.createElement("span");
+      s.className = "star"; s.textContent = "★"; s.title = "En favoritos";
+      b.append(s);
+    }
     b.append(tag, oneLine(a));
     b.onclick = () => { show(a); revealResult(); };
     li.appendChild(b);
@@ -974,6 +1348,17 @@ function toast(msg) {
 function fillCities() {
   const sel = $("city");
   sel.innerHTML = '<option value="">Cualquier ciudad</option>';
+  if (places.length) {                         // lugares que buscaste, arriba de todo
+    const g = document.createElement("optgroup");
+    g.label = "Tus búsquedas";
+    places.forEach((pl, i) => {
+      const o = document.createElement("option");
+      o.value = `P|${i}`;
+      o.textContent = `${pl.label} (${pl.cc})`;
+      g.appendChild(o);
+    });
+    sel.appendChild(g);
+  }
   const ccs = country === "ALL" ? ["US", "CA"] : [country];
   ccs.forEach(cc => {
     const g = document.createElement("optgroup");
@@ -996,10 +1381,20 @@ document.querySelectorAll(".seg button").forEach(b => {
     country = b.dataset.cc;
     document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
     fillCities();
+    discardPrefetch();
   };
 });
 $("go").onclick = generate;
+$("city").onchange = discardPrefetch;          // la siguiente preparada ya no sirve para otra ciudad
+$("place-form").onsubmit = onPlaceSearch;
 $("copy-all").onclick = () => current && copy(oneLine(current), "Dirección copiada");
+$("copy-phone").onclick = () => {
+  if (!current) return;
+  const hasPhone = phonesOf(current).length > 0;
+  copy(addressWithPhone(current), hasPhone ? "Dirección y teléfono copiados" : "Sin teléfono cercano: se copió solo la dirección");
+};
+$("fav-btn").onclick = toggleFav;
+$("r-note").oninput = onNoteInput;
 $("t-map").onclick = () => { mapType = mapType === "k" ? "m" : "k"; renderMap(); };
 $("z-in").onclick = () => { mapZoom = Math.min(ZOOM_MAX, mapZoom + 1); drawMap(); };
 $("z-out").onclick = () => { mapZoom = Math.max(ZOOM_MIN, mapZoom - 1); drawMap(); };
@@ -1017,8 +1412,19 @@ document.addEventListener("keydown", (e) => {
   generate();
 });
 
+// Avisos de conexión: sin internet se pueden seguir viendo favoritos e historial.
+window.addEventListener("offline", () => { discardPrefetch(); setStatus("Sin internet: puedes ver tus favoritos y el historial.", true); });
+window.addEventListener("online", () => { setStatus("Conexión recuperada."); if (current) startPrefetch(); });
+
 fillCities();
+renderFavs();
 renderHistory();
+if (!navigator.onLine) setStatus("Sin internet: puedes ver tus favoritos y el historial.", true);
+
+// Service worker: guarda la app en el móvil para que abra al instante y sin internet.
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
 </script>
 </body>
 </html>

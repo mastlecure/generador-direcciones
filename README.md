@@ -8,11 +8,16 @@ Página web sencilla que genera direcciones reales de casas en Estados Unidos y 
 
 - Direcciones reales de viviendas (casa, dúplex, casa en hilera, edificio residencial); se descartan comercios, bodegas y oficinas.
 - Filtro por país (EE.UU., Canadá o ambos) y por ciudad (27 de EE.UU. y 15 de Canadá).
-- **Teléfono público más cercano:** muestra el negocio o lugar público con teléfono más cercano a la dirección (nombre, categoría, distancia y código de área local). Es siempre el número de un negocio que lo publicó en OpenStreetMap, nunca el de la vivienda.
+- **Buscar cualquier ciudad o código postal** (ej. `Orlando`, `33101`, `M5V`); si hay varias con el mismo nombre, se ofrecen las otras.
+- **Siguiente dirección instantánea:** mientras ves una, la app prepara la siguiente (con sus teléfonos) en segundo plano; el botón muestra ⚡ cuando está lista.
+- **Los 3 teléfonos públicos más cercanos:** negocios o lugares públicos con teléfono (nombre, categoría, distancia y código de área local). Siempre son números que los negocios publicaron en OpenStreetMap, nunca el de la vivienda.
+- **Copiar con teléfono:** copia la dirección y el teléfono más cercano juntos.
+- **Favoritos con notas:** guarda direcciones con ⭐ y escribe notas; no se borran con el historial.
 - Mapa satelital (con nombres de calles) o de calles, con zoom, y enlaces para verificar en Google Maps, Street View y OpenStreetMap. El mapa se arma con imágenes (mosaicos), así carga igual en móvil y en PC.
 - Se puede instalar en el escritorio del móvil con su propio logo (`icons/` y `manifest.webmanifest`).
 - Clic en cualquier dato para copiarlo; botón para copiar la dirección completa.
-- Historial de las últimas 15 direcciones (se guarda en el navegador), con exportación a CSV y botón para borrarlo.
+- Historial de las últimas 15 direcciones (se guarda en el navegador) y exportación a CSV de favoritos (con notas) e historial.
+- **Funciona como app instalada:** el service worker (`sw.js`) guarda la página en el móvil; abre sin internet y deja ver favoritos e historial (el mapa y las búsquedas necesitan conexión).
 - Atajo de teclado: <kbd>G</kbd> genera otra dirección.
 
 ## Fuentes de datos
